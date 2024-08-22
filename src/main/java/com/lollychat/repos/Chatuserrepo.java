@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface Chatuserrepo extends JpaRepository<ChatUser,Long> {
     boolean existsByUsername(String username);
+    boolean existsByEmail(String email);
 }

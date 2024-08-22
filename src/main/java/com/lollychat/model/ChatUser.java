@@ -12,8 +12,13 @@ public class ChatUser {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
+    @Column(nullable = false, unique = true)
     private String username;
+
+    @Column(nullable = false, unique = true)
     private String email;
+
+    @Column(nullable = false)
     private String password;
 
     private boolean enabled;
@@ -22,8 +27,7 @@ public class ChatUser {
         this.enabled = true; // Нові користувачі будуть активовані за замовчуванням
     }
 
-    public ChatUser(Long id, String username, String email, String password) {
-        this.id = id;
+    public ChatUser(String username, String email, String password) {
         this.username = username;
         this.email = email;
         this.password = password;
