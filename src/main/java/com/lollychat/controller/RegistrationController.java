@@ -2,17 +2,19 @@ package com.lollychat.controller;
 
 import com.lollychat.model.ChatUser;
 import com.lollychat.repos.Chatuserrepo;
-import jakarta.mail.internet.MimeMessage;
+import com.lollychat.securingweb.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import jakarta.mail.internet.MimeMessage;
+
 import java.util.UUID;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 @RestController
 @RequestMapping("/api")
@@ -27,10 +29,12 @@ public class RegistrationController {
     @Autowired
     private JavaMailSender mailSender;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
     @PostMapping("/email_validation")
-    public ResponseEntity<String> emailValidation(@RequestParam(defaultValue = "andrii.tivodar@gmail.com") String email) {
-        String token = UUID.randomUUID().toString();
-        System.out.println("here");
+    public ResponseEntity<String> emailValidation(@RequestParam String email) {
+        String token = jwtUtil.generateToken(email); // Використання JWT токена
         String confirmationUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
                 .path("/api/confirm")
                 .queryParam("token", token)
@@ -44,7 +48,7 @@ public class RegistrationController {
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
             helper.setTo(email);
             helper.setSubject(subject);
-            helper.setText(message, true); // true for HTML content
+            helper.setText(message, true);
 
             mailSender.send(mimeMessage);
         } catch (Exception e) {
@@ -62,22 +66,44 @@ public class RegistrationController {
         if (chatuserrepo.existsByUsername(username)) {
             return new ResponseEntity<>("User with this username already exists.", HttpStatus.CONFLICT);
         }
-        System.out.println("here");
+
         ChatUser user = new ChatUser();
         user.setUsername(username);
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password));
         user.setEnabled(true);
 
-        // Save user to the database
         chatuserrepo.save(user);
 
-        return new ResponseEntity<>("Registration successful", HttpStatus.OK);
+        String token = jwtUtil.generateToken(username); // Генерація JWT токена після реєстрації
+
+        return new ResponseEntity<>("Registration successful. Your token: " + token, HttpStatus.OK);
     }
-    @PostMapping("/a")
-    public ResponseEntity<String> handlePostRequest() {
-        // Ваш код тут
-        System.out.println("qeq");
-        return ResponseEntity.ok("Запит отримано");
+
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@RequestParam String username, @RequestParam String password) {
+        ChatUser user = chatuserrepo.findByUsername(username);
+        if (user != null && passwordEncoder.matches(password, user.getPassword())) {
+            String token = jwtUtil.generateToken(username); // Генерація JWT токена при успішному логіні
+            return new ResponseEntity<>("Login successful. Your token: " + token, HttpStatus.OK);
+        }
+        return new ResponseEntity<>("Invalid credentials", HttpStatus.UNAUTHORIZED);
+    }
+
+    @GetMapping("/confirm")
+    public ResponseEntity<String> confirmEmail(@RequestParam String token) {
+        try {
+            String email = jwtUtil.validateToken(token); // Валідація JWT токена
+            ChatUser user = chatuserrepo.findByEmail(email);
+            if (user != null) {
+                user.setEnabled(true);
+                chatuserrepo.save(user);
+                return new ResponseEntity<>("Email confirmed successfully", HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            return new ResponseEntity<>("Invalid or expired token", HttpStatus.BAD_REQUEST);
+        }
     }
 }
