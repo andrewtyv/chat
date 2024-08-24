@@ -26,7 +26,10 @@ public class WebSecurityConfig {
 
     @Bean
     public JdbcUserDetailsManager userDetailsService(DataSource dataSource) {
-        return new JdbcUserDetailsManager(dataSource);
+        JdbcUserDetailsManager manager = new JdbcUserDetailsManager(dataSource);
+        manager.setUsersByUsernameQuery("select username, password, enabled from users where username = ?");
+        manager.setAuthoritiesByUsernameQuery("select username, authority from authorities where username = ?");
+        return manager;
     }
 
     @Bean
@@ -35,7 +38,6 @@ public class WebSecurityConfig {
             if (!userDetailsService.userExists("user")) {
                 UserDetails user = User.withUsername("user")
                         .password(passwordEncoder.encode("password")) // Шифруємо пароль за допомогою PasswordEncoder
-                        .roles("USER")
                         .build();
                 userDetailsService.createUser(user);
             }

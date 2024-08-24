@@ -9,7 +9,7 @@ import java.util.List;
 @Table(name = "users")
 public class ChatUser {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, unique = true)
@@ -27,7 +27,8 @@ public class ChatUser {
         this.enabled = true; // Нові користувачі будуть активовані за замовчуванням
     }
 
-    public ChatUser(String username, String email, String password) {
+    public ChatUser( String username, String email, String password) {
+
         this.username = username;
         this.email = email;
         this.password = password;
