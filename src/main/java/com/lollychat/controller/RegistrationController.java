@@ -14,6 +14,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import jakarta.mail.internet.MimeMessage;
 
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -33,7 +34,8 @@ public class RegistrationController {
     private JwtUtil jwtUtil;
 
     @PostMapping("/email_validation")
-    public ResponseEntity<String> emailValidation(@RequestParam String email) {
+    public ResponseEntity<String> emailValidation(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
         String token = jwtUtil.generateToken(email); // Використання JWT токена
         String confirmationUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
                 .path("/api/confirm")
@@ -60,9 +62,11 @@ public class RegistrationController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> registerUser(@RequestParam String username,
-                                               @RequestParam String email,
-                                               @RequestParam String password) {
+    public ResponseEntity<String> registerUser(@RequestBody Map<String, String> request) {
+        String username = request.get("username");
+        String email = request.get("email");
+        String password = request.get("password");
+
         if (chatuserrepo.existsByUsername(username)) {
             return new ResponseEntity<>("User with this username already exists.", HttpStatus.CONFLICT);
         }
@@ -81,7 +85,10 @@ public class RegistrationController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestParam String username, @RequestParam String password) {
+    public ResponseEntity<String> login(@RequestBody Map<String, String> request) {
+        String username = request.get("username");
+        String password = request.get("password");
+
         ChatUser user = chatuserrepo.findByUsername(username);
         if (user != null && passwordEncoder.matches(password, user.getPassword())) {
             String token = jwtUtil.generateToken(username); // Генерація JWT токена при успішному логіні
