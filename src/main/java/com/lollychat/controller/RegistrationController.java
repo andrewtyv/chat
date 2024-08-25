@@ -67,17 +67,18 @@ public class RegistrationController {
         if (chatuserrepo.existsByUsername(username)) {
             return new ApiResponse("User with this username already exists.", null);
         }
-
+        /*
         ApiResponse emailValidationResponse = emailValidation(email);
         if (!emailValidationResponse.getMessage().equals("Validation email sent successfully")) {
             return new ApiResponse("Error sending validation email.", null);
         }
+         */
 
         ChatUser user = new ChatUser();
         user.setUsername(username);
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password));
-        user.setEnabled(false);
+        user.setEnabled(true);
 
         chatuserrepo.save(user);
 
