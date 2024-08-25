@@ -27,11 +27,11 @@ public class ChatUserController {
     private JwtUtil jwtUtil;
 
     @GetMapping("/me")
-    public ChatUserDTO info(HttpServletRequest request){
+    public ResponseEntity<ChatUserDTO> info(HttpServletRequest request){
         String username = jwtUtil.validateToken(extractToken(request));
         ChatUser me = chatuserRepo.findByUsername(username);
         if (me != null && !me.getUsername().isEmpty()) {
-            return new ChatUserDTO(me.getEmail() , me.getUsername());
+            return new ResponseEntity<>( new ChatUserDTO(me.getEmail() , me.getUsername()), HttpStatus.OK);
         }
         return null;
     }
