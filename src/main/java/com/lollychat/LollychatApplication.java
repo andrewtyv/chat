@@ -1,5 +1,6 @@
 package com.lollychat;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -17,6 +18,11 @@ public class LollychatApplication {
 				registry.addMapping("/**").allowedOrigins("http://localhost:8080");
 			}
 		};
+	}
+	@Bean
+	public ObjectMapper objectMapper() {
+		ObjectMapper mapper = new ObjectMapper();
+		return mapper;
 	}
 
 	public static void main(String[] args) {

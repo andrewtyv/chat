@@ -4,6 +4,9 @@ public class ApiResponse {
     private String message;
     private String token;
 
+    public ApiResponse(){
+
+    }
     public ApiResponse(String message, String token) {
         this.message = message;
         this.token = token;
