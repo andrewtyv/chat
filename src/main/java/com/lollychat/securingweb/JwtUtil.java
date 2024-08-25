@@ -12,8 +12,7 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    private static final SignatureAlgorithm key_signatyre = SignatureAlgorithm.HS256;
-    private static final Key key = Keys.secretKeyFor(key_signatyre);
+    private static final Key key = Keys.hmacShaKeyFor("U0F5jYf5m2K5y5lOe5tNwA7i5lVm5gO0jFfskn5Vo6Y=".getBytes(StandardCharsets.UTF_8));
     private final long expiration = 86400000L; // 24 години
 
     public String generateToken(String username) {

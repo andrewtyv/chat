@@ -1,6 +1,7 @@
 package com.lollychat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lollychat.securingweb.JwtUtil;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
