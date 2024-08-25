@@ -33,10 +33,9 @@ public class RegistrationController {
     @Autowired
     private JwtUtil jwtUtil;
 
-    @PostMapping("/email_validation")
-    public ResponseEntity<String> emailValidation(@RequestBody Map<String, String> request) {
-        String email = request.get("email");
-        String token = jwtUtil.generateToken(email); // Використання JWT токена
+    public ApiResponse emailValidation(String email) {
+
+        String token = jwtUtil.generateToken(email);
         String confirmationUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
                 .path("/api/confirm")
                 .queryParam("token", token)
@@ -55,62 +54,67 @@ public class RegistrationController {
             mailSender.send(mimeMessage);
         } catch (Exception e) {
             e.printStackTrace();
-            return new ResponseEntity<>("Error sending email", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ApiResponse("Error sending email", null);
         }
 
-        return new ResponseEntity<>("Validation email sent successfully", HttpStatus.OK);
+        return new ApiResponse("Validation email sent successfully", null);
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> registerUser(@RequestBody Map<String, String> request) {
+    public ApiResponse registerUser(@RequestBody Map<String, String> request) {
         String username = request.get("username");
         String email = request.get("email");
         String password = request.get("password");
 
         if (chatuserrepo.existsByUsername(username)) {
-            return new ResponseEntity<>("User with this username already exists.", HttpStatus.CONFLICT);
+            return new ApiResponse("User with this username already exists.", null);
+        }
+
+        ApiResponse emailValidationResponse = emailValidation(email);
+        if (!emailValidationResponse.getMessage().equals("Validation email sent successfully")) {
+            return new ApiResponse("Error sending validation email.", null);
         }
 
         ChatUser user = new ChatUser();
         user.setUsername(username);
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password));
-        user.setEnabled(true);
+        user.setEnabled(false);
 
         chatuserrepo.save(user);
 
-        String token = jwtUtil.generateToken(username); // Генерація JWT токена після реєстрації
+        String token = jwtUtil.generateToken(username);
 
-        return new ResponseEntity<>("Registration successful. Your token: " + token, HttpStatus.OK);
+        return new ApiResponse("Registration successful. Please validate your email.", token);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody Map<String, String> request) {
+    public ApiResponse login(@RequestBody Map<String, String> request) {
         String username = request.get("username");
         String password = request.get("password");
 
         ChatUser user = chatuserrepo.findByUsername(username);
-        if (user != null && passwordEncoder.matches(password, user.getPassword())) {
-            String token = jwtUtil.generateToken(username); // Генерація JWT токена при успішному логіні
-            return new ResponseEntity<>("Login successful. Your token: " + token, HttpStatus.OK);
+        if (user != null && passwordEncoder.matches(password, user.getPassword()) && user.isEnabled()) {
+            String token = jwtUtil.generateToken(username);
+            return new ApiResponse("Login successful.", token);
         }
-        return new ResponseEntity<>("Invalid credentials", HttpStatus.UNAUTHORIZED);
+        return new ApiResponse("Invalid credentials", null);
     }
 
     @GetMapping("/confirm")
-    public ResponseEntity<String> confirmEmail(@RequestParam String token) {
+    public ApiResponse confirmEmail(@RequestParam String token) {
         try {
-            String email = jwtUtil.validateToken(token); // Валідація JWT токена
+            String email = jwtUtil.validateToken(token);
             ChatUser user = chatuserrepo.findByEmail(email);
             if (user != null) {
                 user.setEnabled(true);
                 chatuserrepo.save(user);
-                return new ResponseEntity<>("Email confirmed successfully", HttpStatus.OK);
+                return new ApiResponse("Email confirmed successfully", null);
             } else {
-                return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
+                return new ApiResponse("User not found", null);
             }
         } catch (Exception e) {
-            return new ResponseEntity<>("Invalid or expired token", HttpStatus.BAD_REQUEST);
+            return new ApiResponse("Invalid or expired token", null);
         }
     }
 }

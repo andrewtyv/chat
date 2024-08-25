@@ -82,8 +82,8 @@ public class WebSecurityConfig {
         mailSender.setHost("smtp.gmail.com");
         mailSender.setPort(465);
 
-        mailSender.setUsername("tyvalchat@gmail.com");
-        mailSender.setPassword("v3U88t1NV8fR");
+        mailSender.setUsername("chatyvalb@gmail.com");
+        mailSender.setPassword("rhpv nrkq azyo zmcf");
 
         Properties props = mailSender.getJavaMailProperties();
         props.put("mail.transport.protocol", "smtp");
