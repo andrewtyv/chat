@@ -19,11 +19,7 @@ public class LollychatApplication {
 			}
 		};
 	}
-	@Bean
-	public ObjectMapper objectMapper() {
-		ObjectMapper mapper = new ObjectMapper();
-		return mapper;
-	}
+
 
 	public static void main(String[] args) {
 		System.out.println("start");
