@@ -1,11 +1,10 @@
 package com.lollychat.controller;
 
+import com.lollychat.dto.ApiResponse;
 import com.lollychat.model.ChatUser;
 import com.lollychat.repos.Chatuserrepo;
 import com.lollychat.securingweb.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,7 +14,6 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import jakarta.mail.internet.MimeMessage;
 
 import java.util.Map;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api")
@@ -94,7 +92,7 @@ public class RegistrationController {
         String password = request.get("password");
 
         ChatUser user = chatuserrepo.findByUsername(username);
-        if (user != null && passwordEncoder.matches(password, user.getPassword()) && user.isEnabled()) {
+        if (user != null && passwordEncoder.matches(password, user.getPassword())) {
             String token = jwtUtil.generateToken(username);
             return new ApiResponse("Login successful.", token);
         }

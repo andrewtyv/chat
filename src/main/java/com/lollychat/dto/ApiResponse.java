@@ -1,4 +1,4 @@
-package com.lollychat.controller;
+package com.lollychat.dto;
 
 public class ApiResponse {
     private String message;
