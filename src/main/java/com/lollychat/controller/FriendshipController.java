@@ -34,7 +34,8 @@ public class FriendshipController {
     @PostMapping("/request")
     public ResponseEntity<ApiResponseWrapper<String>> addFriendRequest(HttpServletRequest request, @RequestBody Map<String, String> receiverName) {
         String senderName = jwtUtil.validateToken(extractToken(request));
-        if (chatuserRepo.existsByUsername(receiverName.get("username")) && chatuserRepo.existsByUsername(senderName)) {
+        if (chatuserRepo.existsByUsername(receiverName.get("username")) && chatuserRepo.existsByUsername(senderName)
+                && friendshipRepo.findBySenderAndReceiver(chatuserRepo.findByUsername(senderName),chatuserRepo.findByUsername(receiverName.get("username")))== null) {
             ChatUser sender = chatuserRepo.findByUsername(senderName);
             ChatUser receiver = chatuserRepo.findByUsername(receiverName.get("username"));
             friendshipRepo.save(new Friendship(sender, receiver, FriendshipStatus.PENDING));
