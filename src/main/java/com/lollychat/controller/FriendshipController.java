@@ -14,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
+
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,11 +33,20 @@ public class FriendshipController {
     @Autowired
     private JwtUtil jwtUtil;
 
+    private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
     @PostMapping("/request")
     public ResponseEntity<ApiResponseWrapper<String>> addFriendRequest(HttpServletRequest request, @RequestBody Map<String, String> receiverName) {
         String senderName = jwtUtil.validateToken(extractToken(request));
-        if (chatuserRepo.existsByUsername(receiverName.get("username")) && chatuserRepo.existsByUsername(senderName)
-                && friendshipRepo.findBySenderAndReceiver(chatuserRepo.findByUsername(senderName),chatuserRepo.findByUsername(receiverName.get("username")))== null) {
+
+        if (senderName.equals(receiverName.get("username"))) {
+            return new ResponseEntity<>(new ApiResponseWrapper<>("U cannot be friends with yourself", null), HttpStatus.CONFLICT);
+        }
+        else if (friendshipRepo.findBySenderAndReceiver(chatuserRepo.findByUsername(senderName),chatuserRepo.findByUsername(receiverName.get("username"))).isEmpty()){
+            return new ResponseEntity<>(new ApiResponseWrapper<>("Request already created", null), HttpStatus.CONFLICT);
+        }
+
+        if (chatuserRepo.existsByUsername(receiverName.get("username")) && chatuserRepo.existsByUsername(senderName)) {
             ChatUser sender = chatuserRepo.findByUsername(senderName);
             ChatUser receiver = chatuserRepo.findByUsername(receiverName.get("username"));
             friendshipRepo.save(new Friendship(sender, receiver, FriendshipStatus.PENDING));
@@ -54,7 +65,7 @@ public class FriendshipController {
             ChatUser receiver = chatuserRepo.findByUsername(username);
             List<Friendship> requests = friendshipRepo.findByReceiverAndStatus(receiver, FriendshipStatus.PENDING);
             List<FriendshipDTO> response = requests.stream()
-                    .map(f -> new FriendshipDTO(f.getId(), f.getSender().getUsername(), f.getReceiver().getUsername(), f.getStatus().name()))
+                    .map(f -> new FriendshipDTO.Builder().id(f.getId()).sender(f.getSender().getUsername()).createdAt(f.getCreatedAt()).build())
                     .collect(Collectors.toList());//ето було тяжко
             return ResponseEntity.ok(new ApiResponseWrapper<>( "Requests found", response));
         }
@@ -116,12 +127,13 @@ public class FriendshipController {
             ChatUser receiver = chatuserRepo.findByUsername(username);
             List<Friendship> requests = friendshipRepo.findByReceiverAndStatus(receiver, FriendshipStatus.ACCEPTED);
             List<FriendshipDTO> response = requests.stream()
-                    .map(f -> new FriendshipDTO(f.getId(), f.getSender().getUsername(), f.getReceiver().getUsername(), f.getStatus().name()))
+                    .map(f -> new FriendshipDTO.Builder().sender(f.getSender().getUsername()).createdAt(f.getCreatedAt()).build())
                     .collect(Collectors.toList());
             return ResponseEntity.ok(new ApiResponseWrapper<>( "Requests found", response));
         }
 
         return new ResponseEntity<>(new ApiResponseWrapper<>( "No requests found", null), HttpStatus.NOT_FOUND);
     }
+
 
 }
