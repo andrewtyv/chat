@@ -67,7 +67,12 @@ public class FriendshipController {
             ChatUser receiver = chatuserRepo.findByUsername(username);
             List<Friendship> requests = friendshipRepo.findByReceiverAndStatus(receiver, FriendshipStatus.PENDING);
             List<FriendshipDTO> response = requests.stream()
-                    .map(f -> new FriendshipDTO.Builder().id(f.getId()).sender(f.getSender().getUsername()).createdAt(f.getCreatedAt()).build())
+                    .map(f ->
+                            new FriendshipDTO.Builder()
+                                    .id(f.getId())
+                                    .sender(f.getSender().getUsername())
+                                    .createdAt(f.getCreatedAt())
+                                    .build())
                     .collect(Collectors.toList());//ето було тяжко
             return ResponseEntity.ok(new ApiResponseWrapper<>( "Requests found", response));
         }

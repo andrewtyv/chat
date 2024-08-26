@@ -1,13 +1,14 @@
 package com.lollychat.dto;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class FriendshipDTO {
     private Long id;
     private String senderUsername;
     private String receiverUsername;
     private String status;
-    private LocalDateTime createdAt;
+    private String createdAt;
 
     private FriendshipDTO(Builder builder) {
         this.id = builder.id;
@@ -45,11 +46,12 @@ public class FriendshipDTO {
         return status;
     }
 
-    public LocalDateTime getCreatedAt() {
+
+    public String getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(String createdAt) {
         this.createdAt = createdAt;
     }
 
@@ -62,7 +64,7 @@ public class FriendshipDTO {
         private String senderUsername;
         private String receiverUsername;
         private String status;
-        private LocalDateTime createdAt;
+        private String createdAt;
         public Builder id(Long id) {
             this.id = id;
             return this;
@@ -82,8 +84,9 @@ public class FriendshipDTO {
             this.status = status;
             return this;
         }
-        public Builder createdAt(LocalDateTime time){
-            this.createdAt = time;
+        public Builder createdAt(LocalDateTime Time){
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+            this.createdAt = Time.format(formatter);
             return this;
         }
         public FriendshipDTO build() {
