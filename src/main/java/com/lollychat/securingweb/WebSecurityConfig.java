@@ -67,10 +67,11 @@ public class WebSecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
     @Bean
     public DataSource dataSource() {
         return DataSourceBuilder.create()
-                .url("jdbc:postgresql://localhost:5432/chatdata") // Замініть на вашу базу даних
+                .url("jdbc:postgresql://localhost:5432/chatdata")
                 .username("postgres")
                 .password("123qweasdzxc")
                 .driverClassName("org.postgresql.Driver")

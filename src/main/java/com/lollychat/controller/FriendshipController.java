@@ -62,7 +62,8 @@ public class FriendshipController {
     }
 
     @PostMapping("/approve")
-    public ResponseEntity<ApiResponseWrapper<String>> approveRequest(HttpServletRequest request, @RequestParam Long requestId) {
+    public ResponseEntity<ApiResponseWrapper<String>> approveRequest(HttpServletRequest request, @RequestBody Map<String, String> ID) {
+        Long requestId = Long.parseLong(ID.get("requestId"));
         String username = jwtUtil.validateToken(extractToken(request));
         Friendship friendship = friendshipRepo.findById(requestId).orElse(null);
 
@@ -77,7 +78,8 @@ public class FriendshipController {
     }
 
     @PostMapping("/reject")
-    public ResponseEntity<ApiResponseWrapper<String>> rejectRequest(HttpServletRequest request, @RequestParam Long requestId) {
+    public ResponseEntity<ApiResponseWrapper<String>> rejectRequest(HttpServletRequest request, @RequestBody Map<String, String> ID) {
+        Long requestId = Long.parseLong(ID.get("requestId"));
         String username = jwtUtil.validateToken(extractToken(request));
         Friendship friendship = friendshipRepo.findById(requestId).orElse(null);
 
