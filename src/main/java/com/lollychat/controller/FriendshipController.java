@@ -130,7 +130,7 @@ public class FriendshipController {
             List<Friendship> uniqueFriends = requests.stream()
                     .distinct()
                     .collect(Collectors.toList());
-
+            //[eqweqweqweqweqwe
             List<FriendshipDTO> response = uniqueFriends.stream()
                     .filter(f -> !f.getSender().getUsername().equals(username) || !f.getReceiver().getUsername().equals(username))
                     .map(f -> new FriendshipDTO.Builder().sender(f.getSender().getUsername()).createdAt(f.getCreatedAt()).build())
