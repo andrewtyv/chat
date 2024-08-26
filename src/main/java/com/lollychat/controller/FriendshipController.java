@@ -1,6 +1,7 @@
 package com.lollychat.controller;
 
 import com.lollychat.dto.ApiResponseWrapper;
+import com.lollychat.dto.FriendListhandler;
 import com.lollychat.dto.FriendshipDTO;
 import com.lollychat.model.ChatUser;
 import com.lollychat.model.Friendship;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.time.format.DateTimeFormatter;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -120,25 +122,38 @@ public class FriendshipController {
         return ResponseEntity.ok(response);
     }
     @GetMapping("/allfriends")
-    public ResponseEntity<ApiResponseWrapper<List<FriendshipDTO>>> getAllFriends(HttpServletRequest request){
+    public ResponseEntity<ApiResponseWrapper<List<FriendListhandler>>> getAllFriends(HttpServletRequest request){
         String username = jwtUtil.validateToken(extractToken(request));
 
         if (chatuserRepo.existsByUsername(username)) {
-            ChatUser receiver = chatuserRepo.findByUsername(username);
-            List<Friendship> requests = friendshipRepo.findByReceiverAndStatus(receiver, FriendshipStatus.ACCEPTED);
-            requests.addAll(friendshipRepo.findBySenderAndStatus(receiver, FriendshipStatus.ACCEPTED));
-            List<Friendship> uniqueFriends = requests.stream()
+            ChatUser currentUser = chatuserRepo.findByUsername(username);
+            List<Friendship> friendList = new LinkedList<>();
+
+            friendList.addAll(friendshipRepo.findByReceiverAndStatus(currentUser, FriendshipStatus.ACCEPTED));
+
+            friendList.addAll(friendshipRepo.findBySenderAndStatus(currentUser, FriendshipStatus.ACCEPTED));
+
+            List<Friendship> uniqueFriends = friendList.stream()
                     .distinct()
-                    .collect(Collectors.toList());
-            //[eqweqweqweqweqwe
-            List<FriendshipDTO> response = uniqueFriends.stream()
-                    .filter(f -> !f.getSender().getUsername().equals(username) || !f.getReceiver().getUsername().equals(username))
-                    .map(f -> new FriendshipDTO.Builder().sender(f.getSender().getUsername()).createdAt(f.getCreatedAt()).build())
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(new ApiResponseWrapper<>( "Requests found", response));
+                    .collect(Collectors.toCollection(LinkedList::new));
+
+            List<FriendListhandler> response = uniqueFriends.stream()
+                    .map(f -> {
+                        String friendName = f.getSender().getUsername().equals(username)
+                                ? f.getReceiver().getUsername()
+                                : f.getSender().getUsername();
+                        return new FriendListhandler.Builder()
+                                .friendName(friendName)
+                                .createdAt(f.getCreatedAt())
+                                .status(f.getStatus().name())
+                                .build();
+                    })
+                    .collect(Collectors.toCollection(LinkedList::new));
+
+            return ResponseEntity.ok(new ApiResponseWrapper<>("Friends found", response));
         }
 
-        return new ResponseEntity<>(new ApiResponseWrapper<>( "No requests found", null), HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(new ApiResponseWrapper<>("No friends found", null), HttpStatus.NOT_FOUND);
     }
 
 
