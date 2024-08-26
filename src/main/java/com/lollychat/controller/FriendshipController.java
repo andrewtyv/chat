@@ -42,7 +42,7 @@ public class FriendshipController {
         if (senderName.equals(receiverName.get("username"))) {
             return new ResponseEntity<>(new ApiResponseWrapper<>("U cannot be friends with yourself", null), HttpStatus.CONFLICT);
         }
-        else if (friendshipRepo.findBySenderAndReceiver(chatuserRepo.findByUsername(senderName),chatuserRepo.findByUsername(receiverName.get("username"))).isEmpty()){
+        else if (!friendshipRepo.findBySenderAndReceiver(chatuserRepo.findByUsername(senderName),chatuserRepo.findByUsername(receiverName.get("username"))).isEmpty()){
             return new ResponseEntity<>(new ApiResponseWrapper<>("Request already created", null), HttpStatus.CONFLICT);
         }
 
@@ -126,7 +126,13 @@ public class FriendshipController {
         if (chatuserRepo.existsByUsername(username)) {
             ChatUser receiver = chatuserRepo.findByUsername(username);
             List<Friendship> requests = friendshipRepo.findByReceiverAndStatus(receiver, FriendshipStatus.ACCEPTED);
-            List<FriendshipDTO> response = requests.stream()
+            requests.addAll(friendshipRepo.findBySenderAndStatus(receiver, FriendshipStatus.ACCEPTED));
+            List<Friendship> uniqueFriends = requests.stream()
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            List<FriendshipDTO> response = uniqueFriends.stream()
+                    .filter(f -> !f.getSender().getUsername().equals(username) && !f.getReceiver().getUsername().equals(username))
                     .map(f -> new FriendshipDTO.Builder().sender(f.getSender().getUsername()).createdAt(f.getCreatedAt()).build())
                     .collect(Collectors.toList());
             return ResponseEntity.ok(new ApiResponseWrapper<>( "Requests found", response));
