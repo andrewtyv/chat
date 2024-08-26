@@ -132,7 +132,7 @@ public class FriendshipController {
                     .collect(Collectors.toList());
 
             List<FriendshipDTO> response = uniqueFriends.stream()
-                    .filter(f -> !f.getSender().getUsername().equals(username) && !f.getReceiver().getUsername().equals(username))
+                    .filter(f -> !f.getSender().getUsername().equals(username) || !f.getReceiver().getUsername().equals(username))
                     .map(f -> new FriendshipDTO.Builder().sender(f.getSender().getUsername()).createdAt(f.getCreatedAt()).build())
                     .collect(Collectors.toList());
             return ResponseEntity.ok(new ApiResponseWrapper<>( "Requests found", response));
