@@ -160,6 +160,4 @@ public class FriendshipController {
 
         return new ResponseEntity<>(new ApiResponseWrapper<>("No friends found", null), HttpStatus.NOT_FOUND);
     }
-
-
 }

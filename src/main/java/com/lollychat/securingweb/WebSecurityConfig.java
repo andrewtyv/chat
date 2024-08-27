@@ -1,5 +1,6 @@
 package com.lollychat.securingweb;
 
+import org.springframework.core.env.Environment;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.boot.jdbc.DataSourceBuilder;
@@ -24,6 +25,12 @@ import java.util.Properties;
 @EnableWebSecurity
 public class WebSecurityConfig {
 
+    private final Environment env;
+
+    public WebSecurityConfig(Environment env){
+        this.env =env;
+    }
+
     @Bean
     public JdbcUserDetailsManager userDetailsService(DataSource dataSource) {
         JdbcUserDetailsManager manager = new JdbcUserDetailsManager(dataSource);
@@ -47,10 +54,14 @@ public class WebSecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeRequests()
-                .anyRequest().permitAll() // Дозволити доступ до всіх запитів
+                .requestMatchers("/api/register", "/api/login").permitAll()
+                .anyRequest().authenticated()
                 .and()
-                .csrf().disable() // Вимкнути CSRF захист
-                .formLogin().disable() // Вимкнути форму логіну
+                .csrf().disable()
+                .formLogin()
+                .loginPage("/login")
+                .permitAll() // Дозволити доступ до сторінки логіну всім
+                .and()
                 .httpBasic().disable(); // Вимкнути базову автентифікацію
 
         return http.build();
@@ -71,29 +82,31 @@ public class WebSecurityConfig {
     @Bean
     public DataSource dataSource() {
         return DataSourceBuilder.create()
-                .url("jdbc:postgresql://localhost:5432/chatdata")
-                .username("postgres")
-                .password("123qweasdzxc")
-                .driverClassName("org.postgresql.Driver")
+                .url(env.getProperty("spring.datasource.url"))
+                .username(env.getProperty("spring.datasource.username"))
+                .password(env.getProperty("spring.datasource.password"))
+                .driverClassName(env.getProperty("spring.datasource.driver-class-name"))
                 .build();
     }
+
     @Bean
     public JavaMailSender javaMailSender() {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
-        mailSender.setHost("smtp.gmail.com");
-        mailSender.setPort(465);
+        mailSender.setHost(env.getProperty("spring.mail.host"));
+        mailSender.setPort(Integer.parseInt(env.getProperty("spring.mail.port")));
 
-        mailSender.setUsername("chatyvalb@gmail.com");
-        mailSender.setPassword("rhpv nrkq azyo zmcf");
+        mailSender.setUsername(env.getProperty("spring.mail.username"));
+        mailSender.setPassword(env.getProperty("spring.mail.password"));
 
         Properties props = mailSender.getJavaMailProperties();
         props.put("mail.transport.protocol", "smtp");
-        props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.starttls.enable", "true");
-        props.put("mail.smtp.ssl.enable", "true");
-        props.put("mail.debug", "true"); // Enable debugging to view detailed logs
+        props.put("mail.smtp.auth", env.getProperty("spring.mail.properties.mail.smtp.auth"));
+        props.put("mail.smtp.starttls.enable", env.getProperty("spring.mail.properties.mail.smtp.starttls.enable"));
+        props.put("mail.smtp.ssl.enable", env.getProperty("spring.mail.properties.mail.smtp.ssl.enable"));
+        props.put("mail.debug", env.getProperty("spring.mail.properties.mail.debug"));
 
         return mailSender;
     }
+
 
 }
