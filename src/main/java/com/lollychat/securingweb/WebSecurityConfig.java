@@ -1,5 +1,7 @@
 package com.lollychat.securingweb;
 
+import lombok.NoArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
@@ -23,10 +25,13 @@ import java.util.Properties;
 
 @Configuration
 @EnableWebSecurity
+@NoArgsConstructor
 public class WebSecurityConfig {
 
-    private final Environment env;
+    @Autowired
+    private  Environment env;
 
+    @Autowired
     public WebSecurityConfig(Environment env){
         this.env =env;
     }
@@ -93,7 +98,7 @@ public class WebSecurityConfig {
     public JavaMailSender javaMailSender() {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
         mailSender.setHost(env.getProperty("spring.mail.host"));
-        mailSender.setPort(Integer.parseInt(env.getProperty("spring.mail.port")));
+        mailSender.setPort(Integer.parseInt(env.getProperty("spring.mail.port", "465")));
 
         mailSender.setUsername(env.getProperty("spring.mail.username"));
         mailSender.setPassword(env.getProperty("spring.mail.password"));
@@ -103,7 +108,7 @@ public class WebSecurityConfig {
         props.put("mail.smtp.auth", env.getProperty("spring.mail.properties.mail.smtp.auth"));
         props.put("mail.smtp.starttls.enable", env.getProperty("spring.mail.properties.mail.smtp.starttls.enable"));
         props.put("mail.smtp.ssl.enable", env.getProperty("spring.mail.properties.mail.smtp.ssl.enable"));
-        props.put("mail.debug", env.getProperty("spring.mail.properties.mail.debug"));
+        props.put("mail.debug", env.getProperty("spring.mail.debug"));
 
         return mailSender;
     }
