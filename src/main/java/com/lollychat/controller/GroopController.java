@@ -152,7 +152,7 @@ public class GroopController {
         ChatUser user = chatuserRepo.findByUsername(username);
 
         if (user == null) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         Long id = Long.parseLong(data.get("id"));
         List<Message> messages = markMessagesAsReadAndGetMessages(id , user.getId());
@@ -196,7 +196,6 @@ public class GroopController {
         return new ResponseEntity<>(roomDTO, HttpStatus.OK);
     }
 
-    // Метод для відхилення запиту
     @PostMapping("/reject")
     public ResponseEntity<RoomDTO> rejectRequest(HttpServletRequest request, Map<String, String> data) {
         String username = jwtUtil.validateToken(extractToken(request));
