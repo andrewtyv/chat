@@ -3,47 +3,58 @@ package com.lollychat.model;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name ="message")
-public class Message {
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "message_type", discriminatorType = DiscriminatorType.STRING)
+public abstract class Message {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String text;
+    @ManyToOne
+    @JoinColumn(name = "room_id", nullable = false)
+    private Room room;
 
-    private String tag;
+    @ManyToOne
+    @JoinColumn(name = "author_id", nullable = false)
+    private ChatUser author;
 
+    @Column(nullable = false)
+    private boolean read;
 
-    public Message() {
+    public Message(Room room, ChatUser author) {
+        this.room = room;
+        this.author = author;
+        this.read = false;
     }
 
-    public Message( String text, String tag) {
-
-        this.text = text;
-        this.tag = tag;
+    protected Message() {
     }
 
     public Long getId() {
         return id;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public Room getRoom() {
+        return room;
     }
 
-    public String getText() {
-        return text;
+    public void setRoom(Room room) {
+        this.room = room;
     }
 
-    public void setText(String text) {
-        this.text = text;
+    public ChatUser getAuthor() {
+        return author;
     }
 
-    public String getTag() {
-        return tag;
+    public void setAuthor(ChatUser author) {
+        this.author = author;
     }
 
-    public void setTag(String tag) {
-        this.tag = tag;
+    public boolean isRead() {
+        return read;
+    }
+
+    public void setRead(boolean read) {
+        this.read = read;
     }
 }

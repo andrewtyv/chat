@@ -59,15 +59,11 @@ public class WebSecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeRequests()
-                .requestMatchers("/api/register", "/api/login").permitAll()
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
                 .and()
                 .csrf().disable()
-                .formLogin()
-                .loginPage("/login")
-                .permitAll() // Дозволити доступ до сторінки логіну всім
-                .and()
-                .httpBasic().disable(); // Вимкнути базову автентифікацію
+                .formLogin().disable()
+                .httpBasic().disable();
 
         return http.build();
     }
