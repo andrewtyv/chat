@@ -30,29 +30,9 @@ public class Room {
     )
     private List<ChatUser> users = new ArrayList<>();
 
-    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<RoomRequest> roomRequests = new ArrayList<>();
+   // @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
+    //private List<RoomRequest> roomRequests = new ArrayList<>();
 
-    public void addUserRequest(ChatUser user, FriendshipStatus status) {
-        RoomRequest request = new RoomRequest(this, user, status);
-        roomRequests.add(request);
-    }
-
-    public void processUserRequest(ChatUser user, boolean accept) {
-        RoomRequest request = roomRequests.stream()
-                .filter(r -> r.getUser().equals(user))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Request not found"));
-
-        if (accept) {
-            roomRequests.remove(request);
-            users.add(user);
-            request.setStatus(FriendshipStatus.ACCEPTED);
-        } else {
-            roomRequests.remove(request);
-            request.setStatus(FriendshipStatus.REJECTED);
-        }
-    }
     public Room(String name) {
         this.name = name;
         this.createdAt = LocalDateTime.now();
@@ -62,6 +42,9 @@ public class Room {
         this.createdAt = LocalDateTime.now();
     }
 
+    public void addUser(ChatUser user){
+        this.users.add(user);
+    }
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -69,7 +52,7 @@ public class Room {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
-
+/*
     public List<RoomRequest> getRoomRequests() {
         return roomRequests;
     }
@@ -77,6 +60,7 @@ public class Room {
     public void setRoomRequests(List<RoomRequest> roomRequests) {
         this.roomRequests = roomRequests;
     }
+ */
 
     public void setId(Long id) {
         this.id = id;
