@@ -64,8 +64,8 @@ public class RegistrationController {
         String email = request.get("email");
         String password = request.get("password");
 
-        if (chatuserrepo.existsByUsername(username)) {
-            return new ApiResponse("User with this username already exists.", null);
+        if (chatuserrepo.existsByUsername(username) || chatuserrepo.existsByEmail(email)) {
+            return new ApiResponse("User with this username or email already exists.", null);
         }
         /*
         ApiResponse emailValidationResponse = emailValidation(email);
