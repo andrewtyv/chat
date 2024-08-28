@@ -1,15 +1,10 @@
 package com.lollychat.controller;
 
 
+import com.lollychat.dto.MessageDTO;
 import com.lollychat.dto.RoomDTO;
-import com.lollychat.model.ChatUser;
-import com.lollychat.model.FriendshipStatus;
-import com.lollychat.model.Room;
-import com.lollychat.model.RoomRequest;
-import com.lollychat.repos.Chatuserrepo;
-import com.lollychat.repos.Friendshiprepo;
-import com.lollychat.repos.RoomRepo;
-import com.lollychat.repos.RoomRequestRepo;
+import com.lollychat.model.*;
+import com.lollychat.repos.*;
 import com.lollychat.securingweb.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +37,9 @@ public class GroopController {
     @Autowired
     private RoomRequestRepo requestRepo;
 
+    @Autowired
+    private MessageRepo messageRepo;
+
 
     @PostMapping("/createRoom")
     public ResponseEntity<RoomDTO> create(HttpServletRequest request, Map<String , String > data){
@@ -52,18 +50,20 @@ public class GroopController {
         String roomName = data.get("name");
 
         if (roomName == null || roomName.isEmpty()) {
-            return new ResponseEntity<>(new RoomDTO("no room name" , null ,null , null), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new RoomDTO("no room name" , null ,null , null,null), HttpStatus.BAD_REQUEST);
         }
 
         if (user == null ) {
-            return  new ResponseEntity<>(new RoomDTO("no user found" , null , null, null ), HttpStatus.NOT_FOUND);
+            return  new ResponseEntity<>(new RoomDTO("no user found" , null , null, null,null ), HttpStatus.NOT_FOUND);
         }
 
         Room newRoom  = new Room(roomName);
         id = newRoom.getId();
         createdAt = newRoom.getCreatedAt().toString();
+        roomRepo.save(newRoom);
 
-        return new ResponseEntity<>(new RoomDTO("created succesfully ", data.get("name"), id,createdAt ), HttpStatus.OK);
+
+        return new ResponseEntity<>(new RoomDTO("created succesfully ", data.get("name"), id,createdAt,null ), HttpStatus.OK);
     }
 
     @PostMapping("/add")
@@ -93,13 +93,13 @@ public class GroopController {
         RoomRequest newRequest = new RoomRequest(room, receiver, FriendshipStatus.PENDING);
         requestRepo.save(newRequest);
 
-        RoomDTO roomDTO = new RoomDTO("Request sent successfully", room.getName(), room.getId(), room.getCreatedAt().toString());
+        RoomDTO roomDTO = new RoomDTO("Request sent successfully", room.getName(), room.getId(), room.getCreatedAt().toString(),null);
         return new ResponseEntity<>(roomDTO, HttpStatus.CREATED);
 
     }
 
     @GetMapping("/allrequests")
-    public ResponseEntity<List<RoomDTO>> findall(HttpServletRequest request){
+    public ResponseEntity<List<RoomDTO>> findallreq(HttpServletRequest request){
         String username = jwtUtil.validateToken(extractToken(request));
         ChatUser user = chatuserRepo.findByUsername(username);
         if (user == null) {
@@ -107,17 +107,133 @@ public class GroopController {
         }
         List<RoomRequest> requests = requestRepo.findByUserAndStatus(user, FriendshipStatus.PENDING);
         return new ResponseEntity<>(requests.stream()
-                .map(f-> new RoomDTO(
+                .map(f-> new RoomDTO
+                                (
                             null,
                             f.getRoom().getName(),
                             f.getId(),
-                            f.getCreatedAt().toString())
+                            f.getCreatedAt().toString(),
+                                        null)
                     )
                 .collect(Collectors.toList()),
                 HttpStatus.OK );
     }
 
+    @GetMapping("/allgroups")
+    public ResponseEntity<List<RoomDTO>> findAllGroups(HttpServletRequest request) {
+        String username = jwtUtil.validateToken(extractToken(request));
+        ChatUser currentUser = chatuserRepo.findByUsername(username);
+        if (currentUser == null) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
 
+        List<Room> rooms = roomRepo.findByUsers(currentUser);
+
+        List<RoomDTO> roomDTOs = rooms.stream()
+                .map(room -> {
+                    long unreadCount = messageRepo.countByRoomAndAuthorNotAndRead(room, currentUser, false);
+
+                    return new RoomDTO(
+                            null,
+                            room.getName(),
+                            room.getId(),
+                            room.getCreatedAt().toString(),
+                            unreadCount
+                    );
+                })
+                .collect(Collectors.toList());
+
+        return new ResponseEntity<>(roomDTOs, HttpStatus.OK);
+    }
+
+    @PostMapping("/enter")
+    public ResponseEntity<List<MessageDTO>> enterRoom(HttpServletRequest request, Map<String, String> data) {
+        String username = jwtUtil.validateToken(extractToken(request));
+        ChatUser user = chatuserRepo.findByUsername(username);
+
+        if (user == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        Long id = Long.parseLong(data.get("id"));
+        List<Message> messages = markMessagesAsReadAndGetMessages(id , user.getId());
+
+        List<MessageDTO> messageDTOs = messages.stream()
+                .map(m -> new MessageDTO(
+                        m.getId(),
+                        m.getRoom().getId(),
+                        m.getAuthor().getUsername(),
+                        m.isRead(),
+                        ((StringMessage)m).getContent()))
+                .collect(Collectors.toList());
+
+        return new ResponseEntity<>(messageDTOs, HttpStatus.OK);
+    }
+
+    @PostMapping("/accept")
+    public ResponseEntity<RoomDTO> acceptRequest(HttpServletRequest request, Map<String, String> data) {
+        String username = jwtUtil.validateToken(extractToken(request));
+        ChatUser user = chatuserRepo.findByUsername(username);
+
+        if (user == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        Long requestId = Long.parseLong(data.get("requestId"));
+        RoomRequest roomRequest = requestRepo.findById(requestId).orElse(null);
+
+        if (roomRequest == null || !roomRequest.getUser().equals(user)) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        roomRequest.setStatus(FriendshipStatus.ACCEPTED);
+        requestRepo.save(roomRequest);
+
+        Room room = roomRequest.getRoom();
+        room.addUser(user);
+        roomRepo.save(room);
+
+        RoomDTO roomDTO = new RoomDTO("Request accepted", room.getName(), room.getId(), room.getCreatedAt().toString(), null);
+        return new ResponseEntity<>(roomDTO, HttpStatus.OK);
+    }
+
+    // Метод для відхилення запиту
+    @PostMapping("/reject")
+    public ResponseEntity<RoomDTO> rejectRequest(HttpServletRequest request, Map<String, String> data) {
+        String username = jwtUtil.validateToken(extractToken(request));
+        ChatUser user = chatuserRepo.findByUsername(username);
+
+        if (user == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        Long requestId = Long.parseLong(data.get("requestId"));
+        RoomRequest roomRequest = requestRepo.findById(requestId).orElse(null);
+
+        if (roomRequest == null || !roomRequest.getUser().equals(user)) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        roomRequest.setStatus(FriendshipStatus.REJECTED);
+        requestRepo.save(roomRequest);
+
+        RoomDTO roomDTO = new RoomDTO("Request rejected", roomRequest.getRoom().getName(), roomRequest.getRoom().getId(), roomRequest.getCreatedAt().toString(), null);
+        return new ResponseEntity<>(roomDTO, HttpStatus.OK);
+    }
+
+    public List<Message> markMessagesAsReadAndGetMessages(Long roomId, Long userId) {
+        Room room = roomRepo.findById(roomId).orElseThrow(() -> new RuntimeException("Room not found"));
+        ChatUser user = chatuserRepo.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<Message> messages = room.getMessages();
+        for (Message message : messages) {
+            if (!message.getAuthor().equals(user) && !message.isRead()) {
+                message.setRead(true);
+                messageRepo.save(message);
+            }
+        }
+
+        return messages;
+    }
 
     private String extractToken(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");

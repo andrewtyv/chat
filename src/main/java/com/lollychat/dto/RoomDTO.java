@@ -5,12 +5,22 @@ public class RoomDTO {
     private String name;
     private Long id;
     private String createdAt;
+    private Long newMessages;
 
-    public RoomDTO(String message, String name, Long id, String createdAt) {
+    public RoomDTO(String message, String name, Long id, String createdAt, Long newMessages) {
         this.message = message;
         this.name = name;
         this.id = id;
         this.createdAt = createdAt;
+        this.newMessages = newMessages;
+    }
+
+    public Long getNewMessages() {
+        return newMessages;
+    }
+
+    public void setNewMessages(Long newMessages) {
+        this.newMessages = newMessages;
     }
 
     public String getMessage() {
