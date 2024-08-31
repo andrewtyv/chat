@@ -53,7 +53,9 @@ public class FriendshipController {
         if (senderName.equals(receiverName.get("username"))) {
             return new ResponseEntity<>(new ApiResponseWrapper<>("U cannot be friends with yourself", null), HttpStatus.CONFLICT);
         }
-        else if (!friendshipRepo.findBySenderAndReceiver(chatuserRepo.findByUsername(senderName),chatuserRepo.findByUsername(receiverName.get("username"))).isEmpty()){
+        else if (!friendshipRepo.findBySenderAndReceiver(chatuserRepo.findByUsername(senderName),chatuserRepo.findByUsername(receiverName.get("username"))).isEmpty()
+                || !friendshipRepo.findBySenderAndReceiver(chatuserRepo.findByUsername(receiverName.get("username")), chatuserRepo.findByUsername(senderName)).isEmpty()
+        ){
             return new ResponseEntity<>(new ApiResponseWrapper<>("Request already created", null), HttpStatus.CONFLICT);
         }
 
