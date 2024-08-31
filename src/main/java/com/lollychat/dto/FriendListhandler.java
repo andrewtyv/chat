@@ -7,11 +7,15 @@ public class FriendListhandler {
     private String friendName;
     private String createdAt;
     private String status;
+    private Long id;
+    private Long unreadCount;
     //казав що потом буду май много вертати ізза того тут білдер
     private FriendListhandler(Builder builder){
         this.friendName = builder.friendName;
         this.createdAt = builder.createdAt;
         this.status= builder.status;
+        this.id = builder.id;
+        this.unreadCount = builder.unreadCount;
     }
 
     public String getFriendName() {
@@ -42,6 +46,8 @@ public class FriendListhandler {
         private String friendName;
         private String createdAt;
         private String status;
+        private Long id;
+        private Long unreadCount;
 
         public Builder friendName(String friendName){
             this.friendName = friendName;
@@ -56,6 +62,16 @@ public class FriendListhandler {
             this.status = status;
             return this;
         }
+        public Builder Id(long id){
+            this.id = id;
+            return this;
+        }
+
+        public Builder unreadCount(long count){
+            this.unreadCount = count;
+            return this;
+        }
+
         public FriendListhandler build (){
             return new FriendListhandler(this);
         }

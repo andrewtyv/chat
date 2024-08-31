@@ -7,8 +7,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name= "room")
-public class Room {
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "room_type", discriminatorType = DiscriminatorType.STRING)
+@Table(name = "room")
+
+public abstract class Room {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -30,9 +33,6 @@ public class Room {
     )
     private List<ChatUser> users = new ArrayList<>();
 
-   // @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
-    //private List<RoomRequest> roomRequests = new ArrayList<>();
-
     public Room(String name) {
         this.name = name;
         this.createdAt = LocalDateTime.now();
@@ -42,56 +42,28 @@ public class Room {
         this.createdAt = LocalDateTime.now();
     }
 
-    public void addUser(ChatUser user){
-        this.users.add(user);
-    }
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-/*
-    public List<RoomRequest> getRoomRequests() {
-        return roomRequests;
-    }
-
-    public void setRoomRequests(List<RoomRequest> roomRequests) {
-        this.roomRequests = roomRequests;
-    }
- */
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public void setMessages(List<Message> messages) {
-        this.messages = messages;
-    }
-
-    public List<ChatUser> getUsers() {
-        return users;
-    }
-
-    public void setUsers(List<ChatUser> users) {
-        this.users = users;
-    }
-
     public Long getId() {
         return id;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public List<Message> getMessages() {
         return messages;
+    }
+
+    public List<ChatUser> getUsers() {
+        return users;
+    }
+
+    public void addUser(ChatUser user) {
+        this.users.add(user);
     }
 
     public void addMessage(Message message) {
@@ -102,5 +74,25 @@ public class Room {
     public void removeMessage(Message message) {
         messages.remove(message);
         message.setRoom(null);
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setMessages(List<Message> messages) {
+        this.messages = messages;
+    }
+
+    public void setUsers(List<ChatUser> users) {
+        this.users = users;
     }
 }

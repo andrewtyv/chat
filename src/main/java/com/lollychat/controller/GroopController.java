@@ -10,10 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
@@ -32,7 +29,7 @@ public class GroopController {
     private JwtUtil jwtUtil;
 
     @Autowired
-    private RoomRepo roomRepo;
+    private GroopRoomRepo roomRepo;
 
     @Autowired
     private RoomRequestRepo requestRepo;
@@ -57,9 +54,10 @@ public class GroopController {
             return  new ResponseEntity<>(new RoomDTO("no user found" , null , null, null,null ), HttpStatus.NOT_FOUND);
         }
 
-        Room newRoom  = new Room(roomName);
+        GroopRoom newRoom  = new GroopRoom(roomName);
         id = newRoom.getId();
         createdAt = newRoom.getCreatedAt().toString();
+        newRoom.addUser(user);
         roomRepo.save(newRoom);
 
 
@@ -67,7 +65,7 @@ public class GroopController {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<RoomDTO> add_user(HttpServletRequest request, Map<String,String> data){
+    public ResponseEntity<RoomDTO> add_user(HttpServletRequest request, @RequestBody Map<String,String> data){
         String roomName = data.get("roomName");
         Long id = Long.parseLong(data.get("id"));
         String username = jwtUtil.validateToken(extractToken(request));
@@ -78,6 +76,10 @@ public class GroopController {
         }
 
         ChatUser receiver = chatuserRepo.findByUsername(recivername);
+
+        if (room.getUsers().contains(receiver)) {
+            return new ResponseEntity<>(new RoomDTO("User already in the room", room.getName(), room.getId(), room.getCreatedAt().toString(), null), HttpStatus.CONFLICT);
+        }
 
         if (receiver == null || receiver.getUsername().isEmpty()) {
             return  new ResponseEntity<>(null , HttpStatus.NOT_FOUND);
@@ -147,7 +149,7 @@ public class GroopController {
     }
 
     @PostMapping("/enter")
-    public ResponseEntity<List<MessageDTO>> enterRoom(HttpServletRequest request, Map<String, String> data) {
+    public ResponseEntity<List<MessageDTO>> enterRoom(HttpServletRequest request,@RequestBody Map<String, String> data) {
         String username = jwtUtil.validateToken(extractToken(request));
         ChatUser user = chatuserRepo.findByUsername(username);
 
@@ -170,7 +172,7 @@ public class GroopController {
     }
 
     @PostMapping("/accept")
-    public ResponseEntity<RoomDTO> acceptRequest(HttpServletRequest request, Map<String, String> data) {
+    public ResponseEntity<RoomDTO> acceptRequest(HttpServletRequest request,@RequestBody Map<String, String> data) {
         String username = jwtUtil.validateToken(extractToken(request));
         ChatUser user = chatuserRepo.findByUsername(username);
 
@@ -188,7 +190,7 @@ public class GroopController {
         roomRequest.setStatus(FriendshipStatus.ACCEPTED);
         requestRepo.save(roomRequest);
 
-        Room room = roomRequest.getRoom();
+        GroopRoom room = (GroopRoom) roomRequest.getRoom();
         room.addUser(user);
         roomRepo.save(room);
 
@@ -197,7 +199,7 @@ public class GroopController {
     }
 
     @PostMapping("/reject")
-    public ResponseEntity<RoomDTO> rejectRequest(HttpServletRequest request, Map<String, String> data) {
+    public ResponseEntity<RoomDTO> rejectRequest(HttpServletRequest request,@RequestBody Map<String, String> data) {
         String username = jwtUtil.validateToken(extractToken(request));
         ChatUser user = chatuserRepo.findByUsername(username);
 

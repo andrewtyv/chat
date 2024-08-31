@@ -4,10 +4,13 @@ import com.lollychat.dto.ApiResponseWrapper;
 import com.lollychat.dto.FriendListhandler;
 import com.lollychat.dto.FriendshipDTO;
 import com.lollychat.model.ChatUser;
+import com.lollychat.model.FriendRoom;
 import com.lollychat.model.Friendship;
 import com.lollychat.model.FriendshipStatus;
 import com.lollychat.repos.Chatuserrepo;
+import com.lollychat.repos.FriendRoomRepo;
 import com.lollychat.repos.Friendshiprepo;
+import com.lollychat.repos.MessageRepo;
 import com.lollychat.securingweb.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -34,6 +37,12 @@ public class FriendshipController {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    @Autowired
+    private FriendRoomRepo friendRoomRepo;
+
+    @Autowired
+    private MessageRepo messageRepo;
 
     private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
@@ -126,8 +135,10 @@ public class FriendshipController {
 
         return ResponseEntity.ok(response);
     }
+
+
     @GetMapping("/allfriends")
-    public ResponseEntity<ApiResponseWrapper<List<FriendListhandler>>> getAllFriends(HttpServletRequest request){
+    public ResponseEntity<ApiResponseWrapper<List<FriendListhandler>>> getAllFriends(HttpServletRequest request) {
         String username = jwtUtil.validateToken(extractToken(request));
 
         if (chatuserRepo.existsByUsername(username)) {
@@ -135,29 +146,46 @@ public class FriendshipController {
             List<Friendship> friendList = new LinkedList<>();
 
             friendList.addAll(friendshipRepo.findByReceiverAndStatus(currentUser, FriendshipStatus.ACCEPTED));
-
             friendList.addAll(friendshipRepo.findBySenderAndStatus(currentUser, FriendshipStatus.ACCEPTED));
 
             List<Friendship> uniqueFriends = friendList.stream()
                     .distinct()
-                    .collect(Collectors.toCollection(LinkedList::new));
+                    .collect(Collectors.toList());
 
             List<FriendListhandler> response = uniqueFriends.stream()
                     .map(f -> {
                         String friendName = f.getSender().getUsername().equals(username)
                                 ? f.getReceiver().getUsername()
                                 : f.getSender().getUsername();
+
+                        ChatUser friendUser = chatuserRepo.findByUsername(friendName);
+
+                        FriendRoom room = friendRoomRepo.findByUsersInRoom(currentUser, friendUser);
+
+                        if (room == null) {
+                            room = new FriendRoom(currentUser.getUsername() + "_" + friendUser.getUsername());
+                            room.addUser(currentUser);
+                            room.addUser(friendUser);
+                            room = friendRoomRepo.save(room);
+                        }
+
+                        long unreadCount = messageRepo.countByRoomAndAuthorNotAndRead(room, currentUser, false);
+
                         return new FriendListhandler.Builder()
                                 .friendName(friendName)
                                 .createdAt(f.getCreatedAt())
                                 .status(f.getStatus().name())
+                                .Id(room.getId())
+                                .unreadCount(unreadCount)
                                 .build();
                     })
-                    .collect(Collectors.toCollection(LinkedList::new));
+                    .collect(Collectors.toList());
 
             return ResponseEntity.ok(new ApiResponseWrapper<>("Friends found", response));
         }
 
         return new ResponseEntity<>(new ApiResponseWrapper<>("No friends found", null), HttpStatus.NOT_FOUND);
     }
+
+
 }
