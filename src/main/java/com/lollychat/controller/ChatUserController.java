@@ -4,6 +4,7 @@ import com.lollychat.dto.ApiResponse;
 import com.lollychat.dto.ChatUserDTO;
 import com.lollychat.model.ChatUser;
 import com.lollychat.repos.Chatuserrepo;
+import com.lollychat.repos.Friendshiprepo;
 import com.lollychat.securingweb.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -26,6 +27,9 @@ public class ChatUserController {
     @Autowired
     private JwtUtil jwtUtil;
 
+    @Autowired
+    private Friendshiprepo friendshipRepo;
+
 
     @GetMapping("/me")
     public ResponseEntity<ChatUserDTO> info(HttpServletRequest request){
@@ -43,6 +47,15 @@ public class ChatUserController {
             return bearerToken.substring(7);
         }
         return null;
+    }
+
+    @PostMapping("/delete")
+    public void deleteUserAndFriendships(Long userId) {
+        ChatUser user = chatuserRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        friendshipRepo.deleteBySenderOrReceiver(user, user);
+        chatuserRepo.delete(user);
     }
 
 }

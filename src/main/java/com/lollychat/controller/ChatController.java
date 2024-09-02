@@ -55,16 +55,11 @@ public class ChatController {
         Long roomId = Long.parseLong(data.get("roomId"));
 
         Room room = roomRepo.findById(roomId).orElseThrow(() -> new Exception("Room not found"));
-
-        String jwtToken = headerAccessor.getFirstNativeHeader("Authorization");
-        if (jwtToken != null && jwtToken.startsWith("Bearer ")) {
-            jwtToken = jwtToken.substring(7);
-        }
-
-        String username = jwtUtil.validateToken(jwtToken);
+        String token = data.get("token");
+        String username = jwtUtil.validateToken(token);
 
         if (username == null) {
-            throw new Exception("User not authenticated");
+            throw new Exception("Invalid JWT token");
         }
 
         if ("string".equals(type)) {

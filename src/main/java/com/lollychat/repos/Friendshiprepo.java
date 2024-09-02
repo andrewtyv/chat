@@ -9,12 +9,11 @@ import java.util.List;
 
 public interface Friendshiprepo extends JpaRepository<Friendship, Long> {
 
-    // Знаходження дружби за отримувачем та статусом
     List<Friendship> findByReceiverAndStatus(ChatUser receiver, FriendshipStatus status);
 
-    // Знаходження дружби за відправником та статусом
     List<Friendship> findBySenderAndStatus(ChatUser sender, FriendshipStatus status);
 
-    // Знаходження дружби за відправником та отримувачем
     List<Friendship> findBySenderAndReceiver(ChatUser sender, ChatUser receiver);
+
+    void deleteBySenderOrReceiver(ChatUser user, ChatUser user1);
 }

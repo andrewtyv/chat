@@ -18,6 +18,22 @@ public class FriendListhandler {
         this.unreadCount = builder.unreadCount;
     }
 
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Long getUnreadCount() {
+        return unreadCount;
+    }
+
+    public void setUnreadCount(Long unreadCount) {
+        this.unreadCount = unreadCount;
+    }
+
     public String getFriendName() {
         return friendName;
     }
