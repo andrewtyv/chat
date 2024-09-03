@@ -9,6 +9,7 @@ import com.lollychat.securingweb.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,6 +32,8 @@ public class ChatUserController {
     private Friendshiprepo friendshipRepo;
 
 
+
+
     @GetMapping("/me")
     public ResponseEntity<ChatUserDTO> info(HttpServletRequest request){
         String username = jwtUtil.validateToken(extractToken(request));
@@ -50,6 +53,7 @@ public class ChatUserController {
     }
 
     @PostMapping("/delete")
+    @Transactional
     public void deleteUserAndFriendships(HttpServletRequest request) throws Exception {
         String username = jwtUtil.validateToken(extractToken(request));
         ChatUser me = chatuserRepo.findByUsername(username);
