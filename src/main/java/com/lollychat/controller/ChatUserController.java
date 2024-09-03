@@ -50,12 +50,16 @@ public class ChatUserController {
     }
 
     @PostMapping("/delete")
-    public void deleteUserAndFriendships(Long userId) {
-        ChatUser user = chatuserRepo.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    public void deleteUserAndFriendships(HttpServletRequest request) throws Exception {
+        String username = jwtUtil.validateToken(extractToken(request));
+        ChatUser me = chatuserRepo.findByUsername(username);
 
-        friendshipRepo.deleteBySenderOrReceiver(user, user);
-        chatuserRepo.delete(user);
+        if (me == null) {
+            throw new Exception("user not found");
+        }
+
+        friendshipRepo.deleteBySenderOrReceiver(me, me);
+        chatuserRepo.delete(me);
     }
 
 }
